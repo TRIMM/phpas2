@@ -5,12 +5,12 @@ namespace AS2\Tests;
 use AS2\CryptoHelper;
 use AS2\Management;
 use AS2\MimePart;
-use AS2\PartnerInterface;
+use AS2\Model\PartnerInterface;
 use AS2\Server;
 use AS2\Tests\Mock\ConsoleLogger;
-use AS2\Tests\Mock\FileStorage;
-use AS2\Tests\Mock\Message;
-use AS2\Tests\Mock\Partner;
+use AS2\Storage\FileStorage;
+use AS2\Model\Message;
+use AS2\Model\Partner;
 use AS2\Utils;
 use function GuzzleHttp\Psr7\_parse_message;
 use function GuzzleHttp\Psr7\parse_request;
@@ -113,7 +113,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInitPartners
      * @param array $partners
-     * @return \AS2\MessageInterface
+     * @return \AS2\Model\MessageInterface
      */
     public function testInitMessage(array $partners)
     {
@@ -132,7 +132,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInitMessage
      * @param Message $message
-     * @return \AS2\MessageInterface
+     * @return \AS2\Model\MessageInterface
      */
     public function testBuildMessage(Message $message)
     {
@@ -146,7 +146,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testBuildMessage
      * @param Message $message
-     * @return \AS2\MessageInterface
+     * @return \AS2\Model\MessageInterface
      */
     public function testSaveMessage(Message $message)
     {
@@ -164,7 +164,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testSaveMessage
      * @param Message $message
-     * @return \AS2\MessageInterface
+     * @return \AS2\Model\MessageInterface
      */
     public function testSendMessage(Message $message)
     {

@@ -2,9 +2,9 @@
 
 namespace models;
 
-use AS2\MessageInterface;
-use AS2\PartnerInterface;
-use AS2\StorageInterface;
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
+use AS2\Storage\StorageInterface;
 
 class FileStorage implements StorageInterface
 {

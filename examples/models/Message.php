@@ -2,8 +2,8 @@
 
 namespace models;
 
-use AS2\MessageInterface;
-use AS2\PartnerInterface;
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
 
 class Message extends DataObject implements MessageInterface
 {

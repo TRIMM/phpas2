@@ -1,9 +1,10 @@
 <?php
 
-namespace AS2\Tests\Mock;
+namespace AS2\Model;
 
-use AS2\MessageInterface;
-use AS2\PartnerInterface;
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
+use AS2\Model\DataObject;
 
 class Message extends DataObject implements MessageInterface
 {
@@ -23,6 +24,23 @@ class Message extends DataObject implements MessageInterface
     public function setMessageId($id)
     {
         return $this->setData('id', $id);
+    }
+
+    /**
+     * @param string $dir
+     * @return $this
+     */
+    public function setDirection($dir)
+    {
+        return $this->setData('direction', $dir);
+    }
+
+    /**
+     * @return string
+     */
+    public function getDirection()
+    {
+        return $this->getData('direction');
     }
 
     /**
@@ -166,6 +184,23 @@ class Message extends DataObject implements MessageInterface
     /**
      * @return string
      */
+    public function getMdnMode()
+    {
+        return $this->getData('mdn_mode');
+    }
+
+    /**
+     * @param string $status
+     * @return $this
+     */
+    public function setMdnMode($status)
+    {
+        return $this->setData('mdn_mode', $status);
+    }
+
+    /**
+     * @return string
+     */
     public function getMdnStatus()
     {
         return $this->getData('mdn_status');
@@ -200,7 +235,7 @@ class Message extends DataObject implements MessageInterface
     /**
      * @return string
      */
-    public function getCalculatedMic()
+    public function getMic()
     {
         return $this->getData('mic');
     }
@@ -209,7 +244,7 @@ class Message extends DataObject implements MessageInterface
      * @param string $mic
      * @return $this
      */
-    public function setCalculatedMic($mic)
+    public function setMic($mic)
     {
         return $this->setData('mic', $mic);
     }

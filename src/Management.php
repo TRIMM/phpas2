@@ -2,6 +2,8 @@
 
 namespace AS2;
 
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

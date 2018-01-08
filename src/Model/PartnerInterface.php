@@ -1,6 +1,6 @@
 <?php
 
-namespace AS2;
+namespace AS2\Model;
 
 interface PartnerInterface
 {

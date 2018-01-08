@@ -2,6 +2,8 @@
 
 namespace AS2;
 
+use AS2\Model\PartnerInterface;
+
 class Utils
 {
     /**

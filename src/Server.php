@@ -2,6 +2,9 @@
 
 namespace AS2;
 
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
+use AS2\Storage\StorageInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;

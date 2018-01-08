@@ -2,7 +2,8 @@
 
 namespace models;
 
-use AS2\PartnerInterface;
+use AS2\Model\DataObject;
+use AS2\Model\PartnerInterface;
 
 class Partner extends DataObject implements PartnerInterface
 {

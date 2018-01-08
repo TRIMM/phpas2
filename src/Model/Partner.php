@@ -1,8 +1,9 @@
 <?php
 
-namespace AS2\Tests\Mock;
+namespace AS2\Model;
 
-use AS2\PartnerInterface;
+use AS2\Model\DataObject;
+use AS2\Model\PartnerInterface;
 
 class Partner extends DataObject implements PartnerInterface
 {
@@ -42,6 +43,14 @@ class Partner extends DataObject implements PartnerInterface
     /**
      * @return string
      */
+    public function getContentTransferEncoding()
+    {
+        return $this->getData('content_transfer_encoding');
+    }
+
+    /**
+     * @return string
+     */
     public function getSubject()
     {
         return $this->getData('subject');
@@ -76,7 +85,7 @@ class Partner extends DataObject implements PartnerInterface
      */
     public function getSignatureAlgorithm()
     {
-        return $this->getData('sign');
+        return $this->getData('signature_algorithm');
     }
 
     /**
@@ -84,15 +93,15 @@ class Partner extends DataObject implements PartnerInterface
      */
     public function getEncryptionAlgorithm()
     {
-        return $this->getData('encrypt');
+        return $this->getData('encryption_algorithm');
     }
 
     /**
      * @return string
      */
-    public function getPublicKey()
+    public function getCertificate()
     {
-        return $this->getData('public_key');
+        return $this->getData('certificate');
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace AS2\Tests\Mock;
+namespace AS2\Model;
 
 class DataObject
 {

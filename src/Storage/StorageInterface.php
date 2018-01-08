@@ -1,6 +1,9 @@
 <?php
 
-namespace AS2;
+namespace AS2\Storage;
+
+use AS2\Model\MessageInterface;
+use AS2\Model\PartnerInterface;
 
 interface StorageInterface
 {

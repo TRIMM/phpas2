@@ -1,6 +1,6 @@
 <?php
 
-use AS2\PartnerInterface;
+use AS2\Model\PartnerInterface;
 
 require_once "bootstrap.php";
 
