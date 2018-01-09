@@ -119,7 +119,7 @@ class Server
             // Check if payload is encrypted and if so decrypt it
             if ($payload->isEncrypted()) {
                 $this->getLogger()->debug('Inbound AS2 message is encrypted.');
-                $payload = CryptoHelper::decrypt($payload, $receiver->getCertificate(), $receiver->getPrivateKey());
+                $payload = CryptoHelper::decrypt($payload, $receiver->getCertificate(), [$receiver->getPrivateKey(), $receiver->getPrivateKeyPassPhrase()]);
                 if ($payload === false) {
                     throw new \RuntimeException('Failed to decrypt message.');
                 }
