@@ -328,7 +328,7 @@ class Management
             $this->getLogger()->debug('Outbound MDN has been signed.');
             $x509 = openssl_x509_read($receiver->getCertificate());
             $key = openssl_get_privatekey($receiver->getPrivateKey(), $receiver->getPrivateKeyPassPhrase());
-            $report = CryptoHelper::sign($report, $x509, $key, $headers);
+            $report = CryptoHelper::sign($report, $x509, $key, $headers, $receiver->getSignatureAlgorithm());
         }
 
         $this->getLogger()->debug(sprintf('Outbound MDN created for AS2 message "%s".', $messageId));

@@ -89,15 +89,16 @@ class Server
 
             $body = $request->getBody()->getContents();
 
-            $encoding = $request->getHeaderLine('content-transfer-encoding');
-            if (!$encoding) {
-                $encoding = $sender->getContentTransferEncoding();
-            }
+//            $encoding = $request->getHeaderLine('content-transfer-encoding');
+//            if (!$encoding) {
+//                $encoding = $sender->getContentTransferEncoding();
+//            }
             // Force encode binary data to base64, because openssl_pkcs7 doesn't work with binary data
-            if ($encoding != 'base64') {
-                $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
-                $body = Utils::encodeBase64($body);
-            }
+            //remove encoding as it messes up the async MDN receipt
+//            if ($encoding != 'base64') {
+//                $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
+//                $body = Utils::encodeBase64($body);
+//            }
 
             $payload = new MimePart($request->getHeaders(), $body);
 
@@ -134,6 +135,10 @@ class Server
 
             // Check if message is signed and if so verify it
             if ($payload->isSigned()) {
+                //check content-type header before verifying as MDN has the micalg in content-type
+                if (!$micalg) {
+                    $micalg = $payload->getParsedHeader('content-type', 0, 'micalg');
+                }
                 $this->getLogger()->debug('Inbound AS2 message is signed.');
                 $this->getLogger()->debug(sprintf('The sender used the algorithm "%s" to sign the inbound AS2 message.', $micalg));
                 $this->getLogger()->debug('Using certificate to verify inbound AS2 message signature.');
@@ -143,9 +148,6 @@ class Server
                 $this->getLogger()->debug('Digital signature of inbound AS2 message has been verified successful.');
                 $this->getLogger()->debug(sprintf('Found %s payload attachments in the inbound AS2 message.', $payload->getCountParts() - 1));
 
-                if (!$micalg) {
-                    $micalg = $payload->getParsedHeader('content-type', 0, 'micalg');
-                }
                 foreach ($payload->getParts() as $part) {
                     if (!$part->isPkc7Signature()) {
                         $payload = $part;
