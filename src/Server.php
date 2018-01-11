@@ -214,6 +214,7 @@ class Server
             $responseBody = $e->getMessage();
         } catch (\Exception $e) {
             $this->getLogger()->critical($e->getMessage());
+            $this->getLogger()->debug("Exception: " . $e->getMessage() . " - " . $e->getCode() . " - " . $e->getFile() . " - " . $e->getLine() . " - " . $e->getTraceAsString());
             $responseStatus = 500;
             $responseBody = $e->getMessage();
         }
