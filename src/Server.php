@@ -89,16 +89,16 @@ class Server
 
             $body = $request->getBody()->getContents();
 
-//            $encoding = $request->getHeaderLine('content-transfer-encoding');
-//            if (!$encoding) {
-//                $encoding = $sender->getContentTransferEncoding();
-//            }
+            $encoding = $request->getHeaderLine('content-transfer-encoding');
+            if (!$encoding) {
+                $encoding = $sender->getContentTransferEncoding();
+            }
             // Force encode binary data to base64, because openssl_pkcs7 doesn't work with binary data
             //remove encoding as it messes up the async MDN receipt
-//            if ($encoding != 'base64') {
-//                $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
-//                $body = Utils::encodeBase64($body);
-//            }
+            if ($encoding == 'binary') {
+                $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
+                $body = Utils::encodeBase64($body);
+            }
 
             $payload = new MimePart($request->getHeaders(), $body);
 
