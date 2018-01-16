@@ -365,14 +365,21 @@ class Management
             if ($partner->getAuthMethod()) {
                 $options['auth'] = [$partner->getAuthUser(), $partner->getAuthPassword(), $partner->getAuthMethod()];
             }
+            $this->getLogger()->debug("Sending MDN to [id => ". $partner->getAs2Id() . ", url => " . $partner->getTargetUrl() . "]", ['options'=> $options]);
             $response = $this->getHttpClient()->post($partner->getTargetUrl(), $options);
             if ($response->getStatusCode() != 200) {
+                $this->getLogger()->debug("Message send failed", ['statuscode'=> $response->getStatusCode(), 'response headers'=> $response->getHeaders()]);
                 throw new \RuntimeException('Message send failed with error');
             }
             $this->getLogger()->debug('AS2 MDN has been sent.');
             $message->setMdnStatus(MessageInterface::MDN_STATUS_SENT);
             return $response;
         } catch (\Exception $e) {
+            $this->getLogger()->debug("Exception when sending message", [
+                'exception message'=> $e->getMessage(),
+                'code - file - line' => $e->getCode() . ' - '. $e->getFile() . ' - ' . $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             $this->getLogger()->critical($e->getMessage());
             $message->setMdnStatus(MessageInterface::MDN_STATUS_ERROR);
         }
