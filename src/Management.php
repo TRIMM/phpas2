@@ -55,6 +55,7 @@ class Management
      * @param string $filePath
      * @param string $contentType
      * @return MimePart
+     * @throws \Exception
      */
     public function buildMessageFromFile(MessageInterface $message, $filePath, $contentType = null)
     {
@@ -89,6 +90,7 @@ class Management
             throw new \InvalidArgumentException('Unknown Receiver');
         }
 
+        $message->setDirection(MessageInterface::DIR_OUTBOUND);
         $message->setStatus(MessageInterface::STATUS_PENDING);
         $message->setPayload($payload);
 
