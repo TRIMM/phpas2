@@ -135,8 +135,9 @@ class Management
 //                $micAlgo = trim($micAlgo);
 //            }
 
-            $this->getLogger()->debug('Calculate MIC', ['algo' => $signAlgo]);
-            $message->setMic(CryptoHelper::calculateMIC($micContent, $signAlgo));
+            $mic = CryptoHelper::calculateMIC($micContent, $signAlgo);
+            $this->getLogger()->debug('BuildMessage: Calculate MIC', ['algo' => $signAlgo, 'mic' => $mic]);
+            $message->setMic($mic);
 
             $payload = CryptoHelper::sign($payload,
                 $sender->getCertificate(),
@@ -367,7 +368,7 @@ class Management
             if ($partner->getAuthMethod()) {
                 $options['auth'] = [$partner->getAuthUser(), $partner->getAuthPassword(), $partner->getAuthMethod()];
             }
-            $this->getLogger()->debug("Sending MDN to [id => ". $partner->getAs2Id() . ", url => " . $partner->getTargetUrl() . "]", ['options'=> $options]);
+            $this->getLogger()->debug("Sending MDN to [id => ". $partner->getAs2Id() . ", url => " . $partner->getTargetUrl() . "]");
             $response = $this->getHttpClient()->post($partner->getTargetUrl(), $options);
             if ($response->getStatusCode() != 200) {
                 $this->getLogger()->debug("Message send failed", ['statuscode'=> $response->getStatusCode(), 'response headers'=> $response->getHeaders()]);
