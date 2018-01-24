@@ -156,7 +156,7 @@ class Server
                 // TODO: multiple attachments
                 // Saving the message mic for sending it in the MDN
                 $mic = CryptoHelper::calculateMIC($payload, $micalg);
-                $this->getLogger()->debug("Server execute, calculated mic: ", $mic);
+                $this->getLogger()->debug("Server execute, calculated mic: ", ["mic"=> $mic]);
                 $message->setMic($mic);
                 $message->setSigned();
             }
