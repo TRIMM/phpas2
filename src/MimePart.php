@@ -3,26 +3,38 @@
 namespace AS2;
 
 use GuzzleHttp\Psr7\MessageTrait;
-use Psr\Http\Message\MessageInterface;
+use GuzzleHttp\Psr7\Utils as PsrUtils;
+use Psr\Http\Message\MessageInterface as PsrMessageInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 
-class MimePart implements MessageInterface
+class MimePart implements PsrMessageInterface
 {
     use MessageTrait;
 
-    const EOL = "\r\n";
+    public const EOL = "\r\n";
 
-    const TYPE_PKCS7_MIME = 'application/pkcs7-mime';
-    const TYPE_X_PKCS7_MIME = 'application/x-pkcs7-mime';
-    const TYPE_PKCS7_SIGNATURE = 'application/pkcs7-signature';
-    const TYPE_X_PKCS7_SIGNATURE = 'application/x-pkcs7-signature';
+    public const TYPE_PKCS7_MIME = 'application/pkcs7-mime';
+    public const TYPE_X_PKCS7_MIME = 'application/x-pkcs7-mime';
+    public const TYPE_PKCS7_SIGNATURE = 'application/pkcs7-signature';
+    public const TYPE_X_PKCS7_SIGNATURE = 'application/x-pkcs7-signature';
 
-    const MULTIPART_SIGNED = 'multipart/signed';
-    const MULTIPART_REPORT = 'multipart/report';
+    public const MULTIPART_SIGNED = 'multipart/signed';
+    public const MULTIPART_REPORT = 'multipart/report';
 
-    const SMIME_TYPE_COMPRESSED = 'compressed-data';
-    const SMIME_TYPE_ENCRYPTED = 'enveloped-data';
-    const SMIME_TYPE_SIGNED = 'signed-data';
+    public const SMIME_TYPE_COMPRESSED = 'compressed-data';
+    public const SMIME_TYPE_ENCRYPTED = 'enveloped-data';
+    public const SMIME_TYPE_SIGNED = 'signed-data';
+
+    public const ENCODING_7BIT = '7bit';
+    public const ENCODING_8BIT = '8bit';
+    public const ENCODING_QUOTEDPRINTABLE = 'quoted-printable';
+    public const ENCODING_BASE64 = 'base64';
+
+    /**
+     * @var string
+     */
+    protected $rawMessage;
 
     /**
      * @var string
@@ -36,38 +48,88 @@ class MimePart implements MessageInterface
 
     /**
      * MimePart constructor.
-     * @param array $headers
-     * @param null $body
+     *
+     * @param  array  $headers
+     * @param  string  $body
+     * @param  string  $rawMessage
      */
-    public function __construct($headers = [], $body = null)
+    public function __construct($headers = [], $body = null, $rawMessage = null)
     {
-        $this->setHeaders((array)$headers);
-        if (!is_null($body)) {
+        if ($rawMessage !== null) {
+            $this->rawMessage = $rawMessage;
+        }
+
+        $this->setHeaders($this->normalizeHeaders($headers));
+
+        if (! is_null($body)) {
             $this->setBody($body);
         }
     }
 
     /**
-     * Instantiate from Request Object
-     *
-     * @param RequestInterface $request
-     * @return static
+     * @return string
      */
-    public static function fromRequest(RequestInterface $request)
+    public function __toString()
     {
-        return new static($request->getHeaders(), $request->getBody()->getContents());
+        return $this->toString();
     }
 
     /**
-     * Instantiate from raw message string
+     * Instantiate from Request Object.
      *
-     * @param  string $rawMessage
      * @return static
      */
-    public static function fromString($rawMessage)
+    public static function fromPsrMessage(PsrMessageInterface $message)
+    {
+        return new static($message->getHeaders(), $message->getBody()->getContents());
+    }
+
+    /**
+     * Instantiate from Request Object.
+     *
+     * @return static
+     *
+     * @deprecated Please use MimePart::fromPsrMessage
+     */
+    public static function fromRequest(RequestInterface $request)
+    {
+        return self::fromPsrMessage($request);
+    }
+
+    /**
+     * Instantiate from raw message string.
+     *
+     * @param  string  $rawMessage
+     * @param  bool  $saveRaw
+     *
+     * @return static
+     */
+    public static function fromString($rawMessage, $saveRaw = true)
     {
         $payload = Utils::parseMessage($rawMessage);
-        return new static($payload['headers'], $payload['body']);
+
+        return new static($payload['headers'], $payload['body'], $saveRaw ? $rawMessage : null);
+    }
+
+    /**
+     * Recreate message with base64 if part is binary.
+     */
+    public static function createIfBinaryPart(self $message): ?self
+    {
+        $hasBinary = false;
+
+        $temp = new self($message->getHeaders());
+        foreach ($message->getParts() as $part) {
+            if (Utils::isBinary($part->getBodyString())) {
+                $hasBinary = true;
+                $recreatedPart = new self($part->getHeaders(), Utils::encodeBase64($part->getBodyString()));
+                $temp->addPart($recreatedPart);
+            } else {
+                $temp->addPart($part);
+            }
+        }
+
+        return $hasBinary ? $temp : null;
     }
 
     /**
@@ -76,7 +138,9 @@ class MimePart implements MessageInterface
     public function isPkc7Mime()
     {
         $type = $this->getParsedHeader('content-type', 0, 0);
-        return $type == self::TYPE_PKCS7_MIME || $type == self::TYPE_X_PKCS7_MIME;
+        $type = strtolower($type);
+
+        return $type === self::TYPE_PKCS7_MIME || $type === self::TYPE_X_PKCS7_MIME;
     }
 
     /**
@@ -85,7 +149,9 @@ class MimePart implements MessageInterface
     public function isPkc7Signature()
     {
         $type = $this->getParsedHeader('content-type', 0, 0);
-        return $type == self::TYPE_PKCS7_SIGNATURE || $type == self::TYPE_X_PKCS7_SIGNATURE;
+        $type = strtolower($type);
+
+        return $type === self::TYPE_PKCS7_SIGNATURE || $type === self::TYPE_X_PKCS7_SIGNATURE;
     }
 
     /**
@@ -93,7 +159,7 @@ class MimePart implements MessageInterface
      */
     public function isEncrypted()
     {
-        return $this->getParsedHeader('content-type', 0, 'smime-type') == self::SMIME_TYPE_ENCRYPTED;
+        return $this->getParsedHeader('content-type', 0, 'smime-type') === self::SMIME_TYPE_ENCRYPTED;
     }
 
     /**
@@ -101,7 +167,7 @@ class MimePart implements MessageInterface
      */
     public function isCompressed()
     {
-        return $this->getParsedHeader('content-type', 0, 'smime-type') == self::SMIME_TYPE_COMPRESSED;
+        return $this->getParsedHeader('content-type', 0, 'smime-type') === self::SMIME_TYPE_COMPRESSED;
     }
 
     /**
@@ -109,7 +175,7 @@ class MimePart implements MessageInterface
      */
     public function isSigned()
     {
-        return $this->getParsedHeader('content-type', 0, 0) == self::MULTIPART_SIGNED;
+        return $this->getParsedHeader('content-type', 0, 0) === self::MULTIPART_SIGNED;
     }
 
     /**
@@ -117,7 +183,21 @@ class MimePart implements MessageInterface
      */
     public function isReport()
     {
-        return $this->getParsedHeader('content-type', 0, 0) == self::MULTIPART_REPORT;
+        $isReport = $this->getParsedHeader('content-type', 0, 0) === self::MULTIPART_REPORT;
+
+        if ($isReport) {
+            return true;
+        }
+
+        if ($this->isSigned()) {
+            foreach ($this->getParts() as $part) {
+                if ($part->isReport()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -125,7 +205,7 @@ class MimePart implements MessageInterface
      */
     public function isBinary()
     {
-        return $this->getParsedHeader('content-transfer-encoding', 0, 0) == 'binary';
+        return $this->getParsedHeader('content-transfer-encoding', 0, 0) === 'binary';
     }
 
     /**
@@ -133,7 +213,7 @@ class MimePart implements MessageInterface
      */
     public function getCountParts()
     {
-        return count($this->parts);
+        return \count($this->parts);
     }
 
     /**
@@ -141,7 +221,7 @@ class MimePart implements MessageInterface
      */
     public function isMultiPart()
     {
-        return (count($this->parts) > 1);
+        return \count($this->parts) > 1;
     }
 
     /**
@@ -153,7 +233,6 @@ class MimePart implements MessageInterface
     }
 
     /**
-     * @param $num
      * @return static|null
      */
     public function getPart($num)
@@ -162,7 +241,6 @@ class MimePart implements MessageInterface
     }
 
     /**
-     * @param mixed $part
      * @return $this
      */
     public function addPart($part)
@@ -170,21 +248,25 @@ class MimePart implements MessageInterface
         if ($part instanceof static) {
             $this->parts[] = $part;
         } else {
-            $this->parts[] = self::fromString((string)$part);
+            $this->parts[] = self::fromString((string) $part);
         }
+
         return $this;
     }
 
     /**
-     * @param int $num
+     * @param  int  $num
+     *
      * @return bool
      */
     public function removePart($num)
     {
         if (isset($this->parts[$num])) {
             unset($this->parts[$num]);
+
             return true;
         }
+
         return false;
     }
 
@@ -197,94 +279,146 @@ class MimePart implements MessageInterface
     }
 
     /**
-     * @param string $header
-     * @param int $index
-     * @param string|int $param
+     * @param  string  $header
+     * @param  int  $index
+     * @param  int|string  $param
+     *
      * @return array|string|null
      */
     public function getParsedHeader($header, $index = null, $param = null)
     {
+        /** @noinspection CallableParameterUseCaseInTypeContextInspection */
         $header = Utils::parseHeader($this->getHeader($header));
         if ($index === null) {
             return $header;
         }
-        if (!isset($header[$index])) {
-            return [];
-        }
+        $params = isset($header[$index]) ? $header[$index] : [];
         if ($param !== null) {
-            return isset($header[$index][$param]) ? $header[$index][$param] : null;
+            return isset($params[$param]) ? $params[$param] : null;
         }
-        return $header[$index];
+
+        return $params;
     }
 
     /**
-     * Return the currently set message body
+     * Return the currently set message body.
      *
-     * @return string
+     * @return StreamInterface returns the body as a stream
      */
-    public function getBody()
+    public function getBody(): StreamInterface
     {
         $body = $this->body;
-        if (count($this->parts) > 0) {
+        if (\count($this->parts) > 0) {
             $boundary = $this->getParsedHeader('content-type', 0, 'boundary');
             if ($boundary) {
-//                $body .= self::EOL;
+                // $body .= self::EOL;
                 foreach ($this->getParts() as $part) {
-//                    $body .= self::EOL;
-                    $body .= '--' . $boundary . self::EOL;
-                    $body .= $part->toString() . self::EOL;
+                    // $body .= self::EOL;
+                    $body .= '--'.$boundary.self::EOL;
+                    $body .= $part->toString().self::EOL;
                 }
-                $body .= '--' . $boundary . '--' . self::EOL;
+                $body .= '--'.$boundary.'--'.self::EOL;
             }
         }
-        return $body;
+
+        return PsrUtils::streamFor($body);
     }
 
     /**
-     * @param string|static $body
+     * Return the currently set message body as a string.
+     *
+     * @return string returns the body as a string
+     */
+    public function getBodyString(): string
+    {
+        return PsrUtils::copyToString($this->getBody());
+    }
+
+    /**
+     * @param  array|static|string  $body
+     *
      * @return $this
      */
     public function setBody($body)
     {
         if ($body instanceof static) {
             $this->addPart($body);
-        } elseif (is_array($body)) {
+        } elseif (\is_array($body)) {
             foreach ($body as $part) {
                 $this->addPart($part);
             }
         } else {
             $boundary = $this->getParsedHeader('content-type', 0, 'boundary');
+
             if ($boundary) {
-                $separator = '--' . preg_quote($boundary, '/');
-                // Get multi-part content
-                if (preg_match('/' . $separator . '\r?\n(.+?)\r?\n' . $separator . '--/s', $body, $matches)) {
-                    $parts = preg_split('/\r?\n' . $separator . '\r?\n/', $matches[1]);
-                    foreach ($parts as $part) {
-                        $this->addPart($part);
+                $parts = explode('--'.$boundary, $body);
+                array_shift($parts); // remove unecessary first element
+                array_pop($parts); // remove unecessary last element
+
+                foreach ($parts as $part) {
+                    // $part = preg_replace('/^\r?\n|\r?\n$/','',$part);
+                    // Using substr instead of preg_replace as that option is removing multiple break lines instead of only one
+
+                    // /^\r?\n/
+                    if (str_starts_with($part, "\r\n")) {
+                        $part = substr($part, 2);
+                    } elseif ($part[0] === "\n") {
+                        $part = substr($part, 1);
                     }
+                    // /\r?\n$/
+                    if (str_ends_with($part, "\r\n")) {
+                        $part = substr($part, 0, -2);
+                    } elseif (str_ends_with($part, "\n")) {
+                        $part = substr($part, 0, -1);
+                    }
+
+                    $this->addPart($part);
                 }
             } else {
                 $this->body = $body;
             }
         }
+
         return $this;
     }
 
     /**
-     * Serialize to string
+     * @return $this|self
+     */
+    public function withoutRaw()
+    {
+        $this->rawMessage = null;
+
+        return $this;
+    }
+
+    /**
+     * Serialize to string.
      *
      * @return string
      */
     public function toString()
     {
-        return $this->getHeaderLines() . self::EOL . $this->getBody();
+        if ($this->rawMessage) {
+            return $this->rawMessage;
+        }
+
+        return $this->getHeaderLines().self::EOL.$this->getBodyString();
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function __toString()
+    private function normalizeHeaders($headers)
     {
-        return $this->toString();
+        if (\is_array($headers)) {
+            foreach ($headers as $key => $value) {
+                if (strtolower($key) === 'content-type') {
+                    $headers[$key] = str_replace('x-pkcs7-', 'pkcs7-', $headers[$key]);
+                }
+            }
+        }
+
+        return $headers;
     }
 }
